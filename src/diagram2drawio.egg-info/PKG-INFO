@@ -21,7 +21,7 @@ Requires-Dist: scikit-image>=0.21.0
 Requires-Dist: easyocr>=1.7.0
 Requires-Dist: shapely>=2.0.0
 Requires-Dist: networkx>=3.0
-Requires-Dist: typer>=0.9.0
+Requires-Dist: typer>=0.12.0
 Requires-Dist: pydantic>=2.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
@@ -35,7 +35,34 @@ Dynamic: license-file
 
 # diagram2drawio
 
-Convert raster diagram images (PNG, JPG, etc.) into editable **draw.io** files.
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](https://github.com/radiukpavlo/diagram2drawio)
+
+Convert raster diagram images (PNG, JPG, etc.) into editable **draw.io** files using computer vision and OCR.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Via pip (Recommended)](#via-pip-recommended)
+  - [From Source (Development)](#from-source-development)
+  - [Running from Source (No Install)](#running-from-source-no-install)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [Command Line Interface](#command-line-interface)
+  - [Python API](#python-api)
+  - [Manual Correction Workflow](#manual-correction-workflow)
+- [Configuration Options](#configuration-options)
+- [How It Works](#how-it-works)
+- [Debug Artifacts](#debug-artifacts)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
@@ -44,35 +71,165 @@ Convert raster diagram images (PNG, JPG, etc.) into editable **draw.io** files.
 - **Offline processing**: Uses EasyOCR for text recognition, no cloud APIs required
 - **Debug artifacts**: Generates intermediate images and JSON for troubleshooting
 - **Manual correction**: Export to JSON, edit, and rebuild
+- **Flexible configuration**: Fine-tune detection parameters for your diagrams
+
+---
 
 ## Installation
+
+### Via pip (Recommended)
 
 ```bash
 pip install diagram2drawio
 ```
 
-For development:
+For development tools (pytest, ruff, mypy):
 
 ```bash
 pip install "diagram2drawio[dev]"
 ```
 
-## Quick Start
+For Tesseract OCR support:
 
-### Command Line
+```bash
+pip install "diagram2drawio[tesseract]"
+```
+
+### From Source (Development)
+
+This project uses modern Python packaging with `pyproject.toml` (PEP 517/518/621). All dependencies are automatically resolved.
+
+**1. Clone the repository:**
+
+```bash
+git clone https://github.com/radiukpavlo/diagram2drawio.git
+cd diagram2drawio
+```
+
+**2. Create a virtual environment (recommended):**
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (macOS/Linux)
+source venv/bin/activate
+```
+
+**3. Install in editable mode:**
+
+```bash
+# Install with all dependencies from pyproject.toml
+pip install -e .
+
+# Or include development dependencies
+pip install -e ".[dev]"
+```
+
+> **Note**: Editable mode (`-e`) means changes to source code take effect immediately without reinstalling.
+
+### Running from Source (No Install)
+
+You can run the project directly from source without installing:
+
+```bash
+# Navigate to project root
+cd diagram2drawio
+
+# Run as Python module
+python -m diagram2drawio --help
+python -m diagram2drawio convert input.png -o output.drawio
+```
+
+---
+
+## Quick Start
 
 ```bash
 # Basic conversion
 diagram2drawio convert flowchart.png -o flowchart.drawio
 
-# With debug output
+# With debug output for troubleshooting
 diagram2drawio convert flowchart.png -o flowchart.drawio --debug-dir debug/
 
-# Manual correction workflow
-diagram2drawio extract flowchart.png --out-ir diagram.json
-# (edit diagram.json to fix any issues)
-diagram2drawio build diagram.json -o flowchart.drawio
+# Check version
+diagram2drawio --version
 ```
+
+---
+
+## Usage
+
+### Command Line Interface
+
+#### Convert Command
+
+Convert an image directly to a draw.io file:
+
+```bash
+diagram2drawio convert INPUT_PATH [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-o, --output PATH` | Output .drawio file path | `<input_name>.drawio` |
+| `--debug-dir PATH` | Save debug artifacts to directory | None |
+| `--compressed` | Compress diagram content | `False` |
+| `--min-shape-area INT` | Minimum contour area for shape detection | `100` |
+| `--snap-distance INT` | Maximum distance for edge-to-node snapping | `15` |
+| `--ocr-confidence FLOAT` | OCR confidence threshold (0.0-1.0) | `0.4` |
+| `--no-ocr` | Disable OCR text extraction | `False` |
+| `--no-arrowheads` | Disable arrowhead detection | `False` |
+| `--verbose` | Enable detailed logging | `False` |
+
+**Examples:**
+
+```bash
+# Basic conversion
+diagram2drawio convert flowchart.png -o output.drawio
+
+# Fine-tuned for small shapes
+diagram2drawio convert dense_diagram.png -o output.drawio --min-shape-area 50
+
+# Disable OCR for diagrams without text
+diagram2drawio convert shapes_only.png -o output.drawio --no-ocr
+
+# Full debug output with verbose logging
+diagram2drawio convert complex.png -o complex.drawio --debug-dir debug/ --verbose
+```
+
+#### Extract Command
+
+Extract diagram structure to an intermediate JSON representation:
+
+```bash
+diagram2drawio extract INPUT_PATH [OPTIONS]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-o, --out-ir PATH` | Output IR JSON file path | `<input_name>.json` |
+| `--debug-dir PATH` | Save debug artifacts | None |
+| `--verbose` | Enable detailed logging | `False` |
+
+#### Build Command
+
+Build a draw.io file from a JSON intermediate representation:
+
+```bash
+diagram2drawio build IR_PATH [OPTIONS]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-o, --output PATH` | Output .drawio file path | `<ir_name>.drawio` |
+| `--compressed` | Compress diagram content | `False` |
+| `--verbose` | Enable detailed logging | `False` |
 
 ### Python API
 
@@ -82,57 +239,186 @@ from diagram2drawio import convert, extract, build
 # Simple conversion
 diagram = convert("flowchart.png", "flowchart.drawio")
 
-# With debug output
+# With configuration options
 diagram = convert(
     "flowchart.png",
     "flowchart.drawio",
     debug_dir="debug/",
     min_shape_area=150,
+    snap_distance_threshold=20,
+    ocr_confidence_threshold=0.5,
+    enable_ocr=True,
+    enable_arrowheads=True,
 )
 
 # Access extracted data
-print(f"Found {len(diagram.nodes)} nodes")
-print(f"Found {len(diagram.edges)} edges")
+print(f"Detected {len(diagram.nodes)} nodes")
+print(f"Detected {len(diagram.edges)} edges")
+print(f"Detected {len(diagram.texts)} text regions")
+
+# Inspect individual nodes
+for node in diagram.nodes:
+    print(f"  {node.id}: {node.shape.value} at ({node.x}, {node.y}) - '{node.label}'")
 ```
 
-## CLI Options
+#### Two-Step Workflow
 
-```
-diagram2drawio convert [OPTIONS] INPUT_PATH
+```python
+from diagram2drawio import extract, build
 
-Options:
-  -o, --output PATH          Output .drawio file path
-  --debug-dir PATH           Save debug artifacts to directory
-  --compressed               Compress diagram content
-  --min-shape-area INT       Minimum contour area (default: 100)
-  --snap-distance INT        Edge-to-node snap distance (default: 15)
-  --ocr-confidence FLOAT     OCR confidence threshold (default: 0.4)
-  --no-ocr                   Disable OCR
-  --no-arrowheads            Disable arrowhead detection
-  --verbose                  Enable detailed logging
+# Step 1: Extract to IR
+diagram = extract("input.png", output_ir_path="diagram.json", debug_dir="debug/")
+
+# Step 2: Build from IR (after manual corrections)
+build("diagram.json", "output.drawio", compressed=False)
 ```
+
+### Manual Correction Workflow
+
+For diagrams that need manual fixes:
+
+```bash
+# Step 1: Extract to JSON
+diagram2drawio extract flowchart.png --out-ir diagram.json --debug-dir debug/
+
+# Step 2: Edit diagram.json to fix issues:
+#   - Correct OCR text errors
+#   - Fix shape classifications
+#   - Adjust edge connections
+#   - Add missing labels
+
+# Step 3: Build final output
+diagram2drawio build diagram.json -o flowchart.drawio
+```
+
+---
+
+## Configuration Options
+
+| Parameter | CLI Flag | Description | Default |
+|-----------|----------|-------------|---------|
+| `min_shape_area` | `--min-shape-area` | Minimum pixel area for shape detection. Lower for small shapes. | `100` |
+| `snap_distance_threshold` | `--snap-distance` | Maximum distance (pixels) for connecting edges to nodes. | `15` |
+| `ocr_confidence_threshold` | `--ocr-confidence` | Minimum OCR confidence (0.0-1.0). Lower captures more text. | `0.4` |
+| `enable_ocr` | `--no-ocr` (inverted) | Enable/disable text recognition. | `True` |
+| `enable_arrowheads` | `--no-arrowheads` (inverted) | Enable/disable arrowhead detection. | `True` |
+
+---
 
 ## How It Works
 
-1. **Preprocessing**: Load image, normalize, and binarize
-2. **OCR**: Extract text regions using EasyOCR
-3. **Text masking**: Remove text to isolate shapes
-4. **Shape detection**: Find and classify contours (rectangle, diamond, ellipse)
-5. **Connector detection**: Skeletonize and trace lines
-6. **Arrowhead detection**: Identify directed edges
-7. **Association**: Connect edges to nodes
-8. **Label assignment**: Associate text with shapes and edges
-9. **Export**: Generate draw.io XML
+The conversion pipeline processes images through multiple stages:
+
+```mermaid
+flowchart TD
+    A[Input Image] --> B[Preprocessing]
+    B --> C[OCR Text Extraction]
+    C --> D[Text Masking]
+    D --> E[Shape Detection]
+    E --> F[Connector Detection]
+    F --> G[Arrowhead Detection]
+    G --> H[Association]
+    H --> I[Label Assignment]
+    I --> J[Export to draw.io]
+```
+
+### Pipeline Stages
+
+1. **Preprocessing**: Load image, normalize resolution, convert to grayscale, binarize
+2. **OCR**: Extract text regions using EasyOCR with confidence scores
+3. **Text Masking**: Remove detected text to prevent shapes from including text pixels
+4. **Shape Detection**: Find contours and classify as rectangle, diamond, ellipse, or rounded rectangle
+5. **Connector Detection**: Skeletonize binary image, trace lines, simplify polylines
+6. **Arrowhead Detection**: Identify triangular endpoints to determine edge direction
+7. **Association**: Connect edge endpoints to nearest node boundaries
+8. **Label Assignment**: Match text regions to nodes (inside) or edges (nearby)
+9. **Export**: Generate mxGraph XML in draw.io format
+
+---
+
+## Debug Artifacts
+
+When using `--debug-dir`, the following files are generated:
+
+| File | Description |
+|------|-------------|
+| `00_input.png` | Original input image |
+| `01_norm.png` | Normalized/resized image |
+| `02_gray.png` | Grayscale conversion |
+| `03_binary.png` | Binary threshold result |
+| `04_binary_clean.png` | Morphologically cleaned binary |
+| `05_ocr.json` | OCR detection results |
+| `06_ocr_overlay.png` | Image with OCR boxes overlaid |
+| `07_text_mask.png` | Mask of detected text regions |
+| `08_binary_no_text.png` | Binary image with text removed |
+| `09_nodes.json` | Detected shapes/nodes |
+| `10_nodes_overlay.png` | Image with detected nodes |
+| `11_skeleton.png` | Skeletonized lines for connectors |
+| `12_connectors_raw.json` | Raw connector detection |
+| `13_connectors_overlay.png` | Image with connectors |
+| `14_arrowheads.json` | Arrowhead detection results |
+| `15_arrowheads_overlay.png` | Image with arrowheads marked |
+| `16_graph.json` | Node-edge association results |
+| `17_graph_overlay.png` | Final graph visualization |
+| `18_labels_overlay.png` | Image with label assignments |
+| `19_diagram_ir.json` | Complete intermediate representation |
+
+---
 
 ## Requirements
 
-- Python 3.9+
-- OpenCV
-- scikit-image
-- EasyOCR
-- Shapely
-- NetworkX
+### Python Version
+- Python 3.9 or higher
+
+### Core Dependencies
+All dependencies are automatically installed via `pip`:
+
+| Package | Purpose |
+|---------|---------|
+| `opencv-python-headless` | Image processing and computer vision |
+| `numpy` | Numerical operations |
+| `scikit-image` | Skeletonization and morphology |
+| `easyocr` | Offline text recognition |
+| `shapely` | Geometric operations |
+| `networkx` | Graph algorithms |
+| `typer` | Command-line interface |
+| `pydantic` | Data validation and configuration |
+
+### Optional Dependencies
+
+Install with `pip install "diagram2drawio[tesseract]"`:
+- `pytesseract` - Alternative OCR engine (requires Tesseract binary)
+
+### Development Dependencies
+
+Install with `pip install "diagram2drawio[dev]"`:
+- `pytest` - Testing framework
+- `ruff` - Fast Python linter
+- `mypy` - Static type checking
+- `build` - PEP 517 build frontend
+- `twine` - PyPI upload tool
+
+---
+
+## Contributing
+
+Contributions are welcome! To get started:
+
+1. Fork the repository
+2. Clone and install in development mode:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/diagram2drawio.git
+   cd diagram2drawio
+   pip install -e ".[dev]"
+   ```
+3. Run tests:
+   ```bash
+   pytest tests/ -v
+   ```
+4. Create a feature branch and submit a pull request
+
+---
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.

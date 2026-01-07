@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 src/diagram2drawio/__init__.py
+src/diagram2drawio/__main__.py
 src/diagram2drawio/api.py
 src/diagram2drawio/cli.py
 src/diagram2drawio/config.py
