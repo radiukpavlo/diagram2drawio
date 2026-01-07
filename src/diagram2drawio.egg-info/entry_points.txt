@@ -1,0 +1,2 @@
+[console_scripts]
+diagram2drawio = diagram2drawio.cli:app

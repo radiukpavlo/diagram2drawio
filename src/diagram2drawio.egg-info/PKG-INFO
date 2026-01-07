@@ -1,3 +1,38 @@
+Metadata-Version: 2.4
+Name: diagram2drawio
+Version: 0.1.0
+Summary: Convert raster diagram images to editable draw.io files
+Author: diagram2drawio contributors
+License: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: opencv-python-headless>=4.8.0
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: scikit-image>=0.21.0
+Requires-Dist: easyocr>=1.7.0
+Requires-Dist: shapely>=2.0.0
+Requires-Dist: networkx>=3.0
+Requires-Dist: typer>=0.9.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: build>=1.0.0; extra == "dev"
+Requires-Dist: twine>=4.0.0; extra == "dev"
+Provides-Extra: tesseract
+Requires-Dist: pytesseract>=0.3.10; extra == "tesseract"
+Dynamic: license-file
+
 # diagram2drawio
 
 Convert raster diagram images (PNG, JPG, etc.) into editable **draw.io** files.
